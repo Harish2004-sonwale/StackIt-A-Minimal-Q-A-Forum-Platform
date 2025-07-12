@@ -1,0 +1,41 @@
+name: Weekly Database Backup
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Every Sunday at midnight
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          cd scripts
+          npm install mongodb moment
+
+      - name: Backup database
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+        run: |
+          cd scripts
+          node backup.js
+
+      - name: Upload backup to GitHub
+        uses: actions/upload-artifact@v3
+        with:
+          name: database-backup
+          path: scripts/backups/
+
+      - name: Clean up old backups
+        run: |
+          # Remove backups older than 4 weeks
+          find scripts/backups/ -type f -mtime +28 -delete
