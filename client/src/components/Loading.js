@@ -1,18 +1,44 @@
 import React from 'react';
-import { CircularProgress, Box } from '@mui/material';
+import {
+    CircularProgress,
+    Box,
+    Typography,
+    Paper,
+    Container,
+    Grid,
+    Alert
+} from '@mui/material';
 
-const Loading = () => {
+const Loading = ({ message = 'Loading...', error = null }) => {
+    if (error) {
+        return (
+            <Container maxWidth="sm">
+                <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                        {error}
+                    </Alert>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 2 }}>
+                        <CircularProgress />
+                    </Box>
+                    <Typography variant="subtitle1" align="center" sx={{ mt: 2 }}>
+                        Please wait while we fix this...
+                    </Typography>
+                </Paper>
+            </Container>
+        );
+    }
+
     return (
-        <Box
-            sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                minHeight: '100vh',
-            }}
-        >
-            <CircularProgress />
-        </Box>
+        <Container maxWidth="sm">
+            <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <CircularProgress sx={{ mb: 2 }} />
+                    <Typography variant="subtitle1" align="center">
+                        {message}
+                    </Typography>
+                </Box>
+            </Paper>
+        </Container>
     );
 };
 

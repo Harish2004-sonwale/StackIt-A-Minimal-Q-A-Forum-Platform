@@ -9,7 +9,9 @@ import {
     Tooltip,
     Rating,
     Link,
-    Chip
+    Chip,
+    CircularProgress,
+    Alert
 } from '@mui/material';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbDownIcon from '@mui/icons-material/ThumbDown';
@@ -20,6 +22,7 @@ import moment from 'moment';
 import VoteButtons from './VoteButtons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 const AnswerCard = ({ 
     answer, 
@@ -32,6 +35,8 @@ const AnswerCard = ({
     const { user } = useAuth();
     const navigate = useNavigate();
     const isAuthor = user?.id === answer.author;
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     const formatTime = (timestamp) => {
         return moment(timestamp).fromNow();
@@ -39,12 +44,18 @@ const AnswerCard = ({
 
     // Handle mention click
     const handleMentionClick = (username) => {
-        // Navigate to user profile or search
-        navigate(`/search?query=${username}`);
+        try {
+            navigate(`/search?query=${username}`);
+        } catch (err) {
+            setError('Failed to navigate to user profile');
+            console.error(err);
+        }
     };
 
     // Format content with mention links
     const formatContent = (content) => {
+        if (!content) return <Typography>No content available</Typography>;
+        
         const mentionRegex = /@([a-zA-Z0-9_]+)/g;
         return content.replace(mentionRegex, (match, username) => (
             <Link
@@ -63,6 +74,7 @@ const AnswerCard = ({
 
     const handleAcceptAnswer = async (answerId) => {
         try {
+            setLoading(true);
             const response = await axios.put(
                 `/api/answers/${answerId}/accept`,
                 {},
@@ -72,20 +84,31 @@ const AnswerCard = ({
             );
             onAcceptAnswer(response.data.answer);
         } catch (error) {
+            setError('Failed to accept answer');
             console.error('Error accepting answer:', error);
+        } finally {
+            setLoading(false);
         }
     };
+
+    if (error) {
+        return (
+            <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+            </Alert>
+        );
+    }
 
     return (
         <Card sx={{ marginBottom: 2, boxShadow: 2 }}>
             <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Avatar sx={{ mr: 2 }}>
+                    <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
                         {answer.authorName?.charAt(0).toUpperCase()}
                     </Avatar>
                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                         <Typography variant="subtitle1" color="primary">
-                            {answer.authorName}
+                            {answer.authorName || 'Anonymous'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                             {formatTime(answer.createdAt)}
@@ -106,42 +129,42 @@ const AnswerCard = ({
                         </Box>
                     )}
                 </Box>
-
-                <Box sx={{ mb: 3 }}>
-                    {formatContent(answer.content)}
-                </Box>
-
+                <Typography variant="body1" sx={{ mb: 2 }}>
+                    {answer.content ? formatContent(answer.content) : 'No content available'}
+                </Typography>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <VoteButtons
-                            answerId={answer._id}
-                            currentUser={user}
+                    <Box>
+                        <VoteButtons 
+                            answerId={answer._id} 
+                            votes={answer.votes || 0} 
                             onVoteChange={onVoteChange}
+                            loading={loading}
                         />
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {isQuestionOwner && !answer.isAccepted && (
+                            <Tooltip title="Accept this answer">
+                                <IconButton 
+                                    onClick={() => handleAcceptAnswer(answer._id)}
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <CircularProgress size={20} />
+                                    ) : (
+                                        <CheckCircleIcon color="primary" />
+                                    )}
+                                </IconButton>
+                            </Tooltip>
+                        )}
                         {answer.isAccepted && (
-                            <Chip
-                                icon={<CheckCircleIcon sx={{ color: 'success.main' }} />}
-                                label="Accepted Answer"
-                                color="success"
-                                variant="outlined"
+                            <Chip 
+                                label="Accepted" 
+                                color="success" 
                                 size="small"
+                                sx={{ ml: 1 }}
                             />
                         )}
                     </Box>
-                    {isQuestionOwner && !answer.isAccepted && (
-                        <Tooltip title="Mark as accepted answer">
-                            <IconButton
-                                onClick={() => handleAcceptAnswer(answer._id)}
-                                sx={{
-                                    color: 'success.main',
-                                    '&:hover': {
-                                        bgcolor: 'success.light'
-                                    }
-                                }}
-                            >
-                                <CheckCircleIcon />
-                            </IconButton>
-                        </Tooltip>
                     )}
                 </Box>
             </CardContent>
