@@ -119,7 +119,7 @@ chore: maintenance tasks
 
 If you find a security issue, please:
 1. Do NOT open a public issue
-2. Email harishsonwale2004@gmail.com
+2. Email harishsonwale0408@gmail.com
 3. Include full details of the vulnerability
 
 ## 🎉 License
