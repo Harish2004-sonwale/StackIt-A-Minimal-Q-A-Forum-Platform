@@ -12,7 +12,9 @@
     "deploy": "npm run build && git push origin master",
     "postinstall": "cd client && npm install && npm run build",
     "cloud": "npm run build && ./start-cloud.sh",
-    "start-cloud": "./start-cloud.sh"
+    "start-cloud": "./start-cloud.sh",
+    "start-anywhere": "node start-anywhere.js",
+    "run-anywhere": "node start-anywhere.js"
   },
   "dependencies": {
     "express": "^4.18.2",
