@@ -6,11 +6,14 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const path = require('path');
-const rateLimit = require('express-rate-limit');
 const xss = require('xss-clean');
 const mongoSanitize = require('express-mongo-sanitize');
 const csrf = require('csurf');
 const winston = require('winston');
+const connectDB = require('./config/db');
+const errorHandler = require('./middleware/errorHandler');
+const rateLimiter = require('./middleware/rateLimiter');
+const auth = require('./middleware/auth');
 
 const app = express();
 
@@ -20,89 +23,125 @@ const logger = winston.createLogger({
     format: winston.format.json(),
     transports: [
         new winston.transports.File({ filename: 'error.log', level: 'error' }),
-        new winston.transports.File({ filename: 'combined.log' })
+        new winston.transports.File({ filename: 'combined.log' }),
+        new winston.transports.Console({
+            format: winston.format.combine(
+                winston.format.colorize(),
+                winston.format.simple()
+            )
+        })
     ]
 });
-
-// Add console transport in development
-if (process.env.NODE_ENV !== 'production') {
-    logger.add(new winston.transports.Console({
-        format: winston.format.simple()
-    }));
-}
 
 // Security middleware
 app.use(cors({
     origin: process.env.ALLOWED_ORIGINS || '*',
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
 }));
+
 app.use(helmet({
-    contentSecurityPolicy: false // Disable CSP for development
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", 'data:', 'https:'],
+            connectSrc: ["'self'"],
+            fontSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'"],
+            frameSrc: ["'none'"],
+            baseUri: ["'self'"],
+            formAction: ["'self'"],
+            frameAncestors: ["'none'"],
+            upgradeInsecureRequests: [],
+            blockAllMixedContent: []
+        }
+    }
 }));
+
 app.use(compression());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(morgan('dev'));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(morgan('dev', {
+    stream: {
+        write: (message) => logger.info(message.trim())
+    }
+}));
 app.use(xss());
 app.use(mongoSanitize());
 
 // Rate limiting
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: 'Too many requests from this IP, please try again later.'
-});
-app.use(limiter);
+app.use(rateLimiter.logRateLimit);
+app.use('/api/auth/login', rateLimiter.loginLimiter);
+app.use('/api/admin/*', rateLimiter.adminLimiter);
+app.use('/api/*', rateLimiter.apiLimiter);
 
 // CSRF protection
 const csrfProtection = csrf({ cookie: true });
 app.use(csrfProtection);
+app.use((req, res, next) => {
+    res.cookie('XSRF-TOKEN', req.csrfToken());
+    next();
+});
 
-// Monitoring routes
-app.use('/api/monitor', require('./routes/monitor'));
-
-// MongoDB connection with retry
+// MongoDB connection
 let dbConnected = false;
-const connectDB = async () => {
+const initDB = async () => {
     try {
-        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/stackit', {
-            useNewUrlParser: true,
-            useUnifiedTopology: true
-        });
-        console.log('MongoDB connected');
+        const connection = await connectDB();
+        logger.info('Database connection initialized');
         dbConnected = true;
-    } catch (err) {
-        console.error('MongoDB connection error:', err);
-        setTimeout(connectDB, 5000); // Retry after 5 seconds
+        return connection;
+    } catch (error) {
+        logger.error('Database initialization failed:', error);
+        dbConnected = false;
+        // Retry connection after 5 seconds
+        setTimeout(initDB, 5000);
     }
 };
 
-connectDB();
-
 // Routes
-const authRoutes = require('./routes/auth');
-const questionsRoutes = require('./routes/questions');
-const answersRoutes = require('./routes/answers');
-const votesRoutes = require('./routes/votes');
-const notificationsRoutes = require('./routes/notifications');
-const adminRoutes = require('./routes/admin');
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/questions', auth, require('./routes/questions'));
+app.use('/api/answers', auth, require('./routes/answers'));
+app.use('/api/users', auth, require('./routes/users'));
+app.use('/api/admin', auth, require('./routes/admin'));
+app.use('/api/health', require('./routes/health'));
+app.use('/api/monitor', require('./routes/monitor'));
 
-app.use('/api/auth', authRoutes);
-app.use('/api/questions', questionsRoutes);
-app.use('/api/answers', answersRoutes);
-app.use('/api/votes', votesRoutes);
-app.use('/api/notifications', notificationsRoutes);
-app.use('/api/admin', adminRoutes);
+// Error handling
+app.use(errorHandler);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({
-        message: 'Something went wrong!',
-        error: process.env.NODE_ENV === 'development' ? err.message : {}
+// Start server
+const server = app.listen(process.env.PORT || 5000, () => {
+    const port = process.env.PORT || 5000;
+    logger.info(`Server running on port ${port}`);
+    initDB();
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    logger.info('SIGTERM signal received: closing HTTP server');
+    server.close(() => {
+        logger.info('HTTP server closed');
+        mongoose.connection.close(() => {
+            logger.info('MongoDB connection closed');
+            process.exit(0);
+        });
     });
+});
+
+// Unhandled promise rejection
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Uncaught exception
+process.on('uncaughtException', (err) => {
+    logger.error('Uncaught Exception:', err);
 });
 
 // Serve static assets in production
