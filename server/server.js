@@ -8,15 +8,37 @@ const morgan = require('morgan');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const xss = require('xss-clean');
-const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const csrf = require('csurf');
+const winston = require('winston');
 
 const app = express();
 
+// Configure logger
+const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.json(),
+    transports: [
+        new winston.transports.File({ filename: 'error.log', level: 'error' }),
+        new winston.transports.File({ filename: 'combined.log' })
+    ]
+});
+
+// Add console transport in development
+if (process.env.NODE_ENV !== 'production') {
+    logger.add(new winston.transports.Console({
+        format: winston.format.simple()
+    }));
+}
+
 // Security middleware
-app.use(cors());
-app.use(helmet());
+app.use(cors({
+    origin: process.env.ALLOWED_ORIGINS || '*',
+    credentials: true
+}));
+app.use(helmet({
+    contentSecurityPolicy: false // Disable CSP for development
+}));
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -27,13 +49,19 @@ app.use(mongoSanitize());
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100 // limit each IP to 100 requests per windowMs
+    max: 100, // limit each IP to 100 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: 'Too many requests from this IP, please try again later.'
 });
 app.use(limiter);
 
 // CSRF protection
 const csrfProtection = csrf({ cookie: true });
 app.use(csrfProtection);
+
+// Monitoring routes
+app.use('/api/monitor', require('./routes/monitor'));
 
 // MongoDB connection with retry
 let dbConnected = false;
