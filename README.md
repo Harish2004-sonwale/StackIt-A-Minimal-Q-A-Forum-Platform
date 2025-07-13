@@ -4,6 +4,29 @@
 [![GitHub issues](https://img.shields.io/github/issues/Harish2004-sonwale/StackIt-A-Minimal-Q-A-Forum-Platform)](https://github.com/Harish2004-sonwale/StackIt-A-Minimal-Q-A-Forum-Platform/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/Harish2004-sonwale/StackIt-A-Minimal-Q-A-Forum-Platform)](https://github.com/Harish2004-sonwale/StackIt-A-Minimal-Q-A-Forum-Platform/pulls)
 
+## 🌟 About UNLOCKED SERIES
+
+StackIt is part of the UNLOCKED SERIES - a collection of open-source projects designed to be accessible, easy to use, and free for everyone. The UNLOCKED SERIES aims to make technology accessible and understandable for everyone, regardless of their background or experience level.
+
+### 📖 What makes it UNLOCKED?
+- ✅ No restrictions on usage
+- ✅ Free for personal and commercial use
+- ✅ Easy to modify and distribute
+- ✅ Comprehensive documentation
+- ✅ Community support
+- ✅ Regular updates and improvements
+
+### 🤝 How to Contribute
+We welcome contributions from everyone! Whether you're a beginner or an experienced developer, there are ways to help:
+1. Report bugs and issues
+2. Submit feature requests
+3. Contribute code improvements
+4. Help with documentation
+5. Share your experiences using the project
+
+### 📄 License
+This project is licensed under the UNLOCKED SERIES LICENSE, which is compatible with the MIT License. For full license details, see the LICENSE file.
+
 StackIt is a modern, full-stack Q&A platform built with React, Node.js, Express, and MongoDB. It provides a minimal yet powerful interface for asking and answering technical questions, similar to Stack Overflow.
 
 ## 🚀 Features
