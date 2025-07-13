@@ -1,0 +1,88 @@
+{
+    "environments": {
+        "local": {
+            "type": "local",
+            "node_version": "18.x",
+            "mongodb_version": "7.0",
+            "ports": {
+                "frontend": 3000,
+                "backend": 5000
+            },
+            "dependencies": {
+                "nodejs": {
+                    "url": "https://nodejs.org/dist/v18.x/node-v18.x-x64.msi",
+                    "installer": "msi"
+                },
+                "mongodb": {
+                    "url": "https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-7.0.3-signed.msi",
+                    "installer": "msi"
+                },
+                "git": {
+                    "url": "https://github.com/git-for-windows/git/releases/download/v2.43.0.windows.1/Git-2.43.0-64-bit.exe",
+                    "installer": "exe"
+                }
+            }
+        },
+        "render": {
+            "type": "cloud",
+            "provider": "render",
+            "services": {
+                "backend": {
+                    "build_command": "npm install",
+                    "start_command": "npm start",
+                    "env": {
+                        "NODE_ENV": "production",
+                        "PORT": "5000",
+                        "MONGODB_URI": "mongodb+srv://<username>:<password>@cluster0.mongodb.net/stackit",
+                        "JWT_SECRET": "your-secret-key",
+                        "SESSION_SECRET": "your-session-secret",
+                        "CLIENT_URL": "https://stackit-frontend.onrender.com",
+                        "ALLOWED_ORIGINS": "https://stackit-frontend.onrender.com"
+                    }
+                },
+                "frontend": {
+                    "build_command": "npm install && npm run build",
+                    "start_command": "npm start",
+                    "env": {
+                        "NODE_ENV": "production",
+                        "REACT_APP_API_URL": "https://stackit-backend.onrender.com/api",
+                        "REACT_APP_ENV": "production"
+                    }
+                }
+            }
+        },
+        "heroku": {
+            "type": "cloud",
+            "provider": "heroku",
+            "buildpacks": [
+                "heroku/nodejs",
+                "heroku/react"
+            ],
+            "env": {
+                "NODE_ENV": "production",
+                "PORT": "${PORT:-5000}",
+                "MONGODB_URI": "mongodb+srv://<username>:<password>@cluster0.mongodb.net/stackit",
+                "JWT_SECRET": "your-secret-key",
+                "SESSION_SECRET": "your-session-secret",
+                "CLIENT_URL": "https://stackit-frontend.herokuapp.com",
+                "ALLOWED_ORIGINS": "https://stackit-frontend.herokuapp.com"
+            }
+        }
+    },
+    "default_environment": "local",
+    "deployment_steps": {
+        "local": [
+            "install_dependencies",
+            "setup_mongodb",
+            "build_frontend",
+            "start_servers"
+        ],
+        "cloud": [
+            "setup_environment",
+            "deploy_backend",
+            "deploy_frontend",
+            "setup_monitoring",
+            "configure_cors"
+        ]
+    }
+}
