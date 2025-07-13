@@ -132,7 +132,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🤝 Support
 
-For support, email harishsonwale2004@gmail.com or create an issue in the repository.
+For support, email harishsonwale0408@gmail.com or create an issue in the repository.
 
 ## 👨‍💻 Authors
 
