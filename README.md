@@ -79,7 +79,17 @@ cd StackIt-A-Minimal-Q-A-Forum-Platform
 
 1. **Install Required Software**
    - Download and install Node.js from: https://nodejs.org/
-   - Download and install MongoDB from: https://www.mongodb.com/try/download/community
+   - MongoDB Installation:
+     1. Download MongoDB Community Server from: https://www.mongodb.com/try/download/community
+     2. Run the installer
+     3. During installation:
+        - Choose "Complete" installation
+        - Make sure to check "Install MongoDB as a Service"
+        - Make sure to check "Add MongoDB to PATH"
+     4. Create MongoDB data directory:
+        ```bash
+        mkdir C:\data\db
+        ```
    - Install Git from: https://git-scm.com/download/windows
 
 2. **Run the Project**

@@ -13,11 +13,23 @@ echo Node.js is installed
 
 :: Check if MongoDB is installed
 echo Checking MongoDB installation...
-mongod --version >nul 2>&1
+where mongod >nul 2>&1
 if errorlevel 1 (
-    echo Error: MongoDB is not installed
-    echo Please install MongoDB from https://www.mongodb.com/try/download/community
-    exit /b 1
+    echo MongoDB is not installed. Installing now...
+    
+    :: Download MongoDB Community Server
+    echo Downloading MongoDB Community Server...
+    powershell -Command "Invoke-WebRequest -Uri 'https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-7.0.3-signed.msi' -OutFile 'mongodb.msi'"
+    
+    :: Install MongoDB
+    echo Installing MongoDB...
+    msiexec /i mongodb.msi /quiet
+    
+    :: Add MongoDB to PATH
+    echo Adding MongoDB to PATH...
+    setx PATH "%PATH%;C:\Program Files\MongoDB\Server\7.0\bin" /M
+    
+    echo MongoDB installation complete!
 )
 
 echo MongoDB is installed
@@ -31,9 +43,12 @@ cd ..
 cd server
 call npm install
 cd ..
+cd scripts
+call npm install
+cd ..
 
 if errorlevel 1 (
-    echo Error: Failed to install dependencies
+    echo Failed to install dependencies
     exit /b 1
 )
 
@@ -44,7 +59,7 @@ call npm run build
 cd ..
 
 if errorlevel 1 (
-    echo Error: Failed to build frontend
+    echo Failed to build frontend
     exit /b 1
 )
 
@@ -67,7 +82,7 @@ if not exist client\.env (
 
 :: Start MongoDB
 echo Starting MongoDB...
-start "MongoDB" mongod
+start "MongoDB" "C:\Program Files\MongoDB\Server\7.0\bin\mongod.exe" --dbpath="C:\data\db"
 
 echo Starting application...
 
