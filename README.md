@@ -73,6 +73,36 @@ git clone https://github.com/Harish2004-sonwale/StackIt-A-Minimal-Q-A-Forum-Plat
 cd StackIt-A-Minimal-Q-A-Forum-Platform
 ```
 
+## 🚀 Quick Start
+
+### Windows Setup
+
+1. **Install Required Software**
+   - Download and install Node.js from: https://nodejs.org/
+   - Download and install MongoDB from: https://www.mongodb.com/try/download/community
+   - Install Git from: https://git-scm.com/download/windows
+
+2. **Run the Project**
+   - Double-click `run-local.bat` in the project root directory
+   - This will:
+     - Start MongoDB
+     - Install all dependencies
+     - Build the frontend
+     - Start the backend server
+     - Start the frontend server
+
+3. **Access the Application**
+   - Frontend: http://localhost:3000
+   - Backend: http://localhost:5000
+   - API: http://localhost:5000/api
+
+### Alternative Start Methods
+
+1. **Using Command Line**
+```bash
+npm run run-anywhere
+```
+
 2. Install dependencies:
 ```bash
 cd client && npm install
