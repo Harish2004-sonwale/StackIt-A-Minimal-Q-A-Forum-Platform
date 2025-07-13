@@ -30,10 +30,11 @@ jobs:
           node backup.js
 
       - name: Upload backup to GitHub
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: database-backup
           path: scripts/backups/
+          retention-days: 7  # Keep backups for 7 days
 
       - name: Clean up old backups
         run: |
